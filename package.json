@@ -1,0 +1,31 @@
+{
+  "name": "z3-web",
+  "version": "1.0.0",
+  "description": "A simple web service for the Z3 theorem prover.",
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "npx tslint -c tslint.json -p tsconfig.json --fix",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dbarowy/z3-web.git"
+  },
+  "author": "Daniel W. Barowy",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/dbarowy/z3-web/issues"
+  },
+  "homepage": "https://github.com/dbarowy/z3-web#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "typescript": "^4.2.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "tslint": "^6.1.3"
+  }
+}
