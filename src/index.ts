@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { spawnSync } from "child_process";
 
 /**
@@ -17,6 +18,8 @@ function callZ3(program: string): string {
 function main() {
   const app = express();
   const port = 3456;
+
+  app.use(cors()); // Allow CORS requests
 
   app.get("/", (req, res) => {
     if (!req.query.program) {
