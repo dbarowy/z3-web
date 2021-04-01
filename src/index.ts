@@ -1,16 +1,15 @@
 import express from "express";
 import util from "util";
-import { exec } from "child_process";
+import { spawn, spawnSync } from "child_process";
 
-const exe = util.promisify(exec); // do magic JavaScript stuff
-
-async function callZ3(program: string): Promise<string> {
-  const { stdout, stderr } = await exe(
-    "z3 -in < " + "TODO HERE STDIN HOWTO IN NODE?"
-  );
-  console.log("stdout:", stdout);
-  console.log("stderr:", stderr);
-  return stdout;
+/**
+ * This function
+ * @param program
+ * @returns
+ */
+function callZ3(program: string): string {
+  const child = spawnSync("z3", ["-in"], { input: program });
+  return child.stdout.toString();
 }
 
 /**
@@ -19,11 +18,10 @@ async function callZ3(program: string): Promise<string> {
 function main() {
   const app = express();
   const port = 3456;
-  let i = 0;
 
   app.get("/", (req, res) => {
-    res.send(i.toString());
-    i++;
+    res.send(callZ3("(declare-const x Int) (check-sat) (get-model)"));
+    // res.send("hello world!");
   });
 
   app.listen(port, () => {
