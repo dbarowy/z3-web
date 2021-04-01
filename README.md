@@ -53,4 +53,4 @@ which will start up the web service with the `nodemon` monitor. There are two be
 
 ## Security Notes
 
-The service does no filtering of queries of any kind, and it calls Z3 synchronously, so be warned: it's probably not secure and it's pretty easy stage a denial-of-service attack. If you need something for public deployment, this isn't it. I developed this wrapper to make research code possible.
+The service does no filtering of queries of any kind, and it calls Z3 synchronously, so be warned: it's probably not secure and it's easy stage a denial-of-service attack. If you need something for public deployment, this isn't it. I developed this wrapper to make research code possible.
