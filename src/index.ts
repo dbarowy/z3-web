@@ -1,6 +1,5 @@
 import express from "express";
-import util from "util";
-import { spawn, spawnSync } from "child_process";
+import { spawnSync } from "child_process";
 
 /**
  * This function
@@ -20,8 +19,11 @@ function main() {
   const port = 3456;
 
   app.get("/", (req, res) => {
-    res.send(callZ3("(declare-const x Int) (check-sat) (get-model)"));
-    // res.send("hello world!");
+    if (!req.query.program) {
+      console.log("Invalid program.");
+    }
+    const program = req.query.program as string;
+    res.send(callZ3(program));
   });
 
   app.listen(port, () => {
