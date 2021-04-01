@@ -10,6 +10,8 @@ Run:
 $ npm install
 ```
 
+You will also need to ensure that [Z3 is installed locally](https://github.com/Z3Prover/z3/releases). It should be in the path of whatever shell you use to run `npm` below.
+
 ## Running
 
 Run:
