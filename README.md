@@ -10,7 +10,37 @@ Run:
 $ npm install
 ```
 
-You will also need to ensure that [Z3 is installed locally](https://github.com/Z3Prover/z3/releases). It should be in the path of whatever shell you use to run `npm` below.
+You will also need to ensure that [Z3 is installed locally](https://github.com/Z3Prover/z3/releases).
+
+### Installing Z3
+
+These should not be considered canonical Z3 installation instructions, but here's what works for me.
+
+#### Windows 10
+
+1. Download [the 64 bit release ZIP file](https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-win.zip) and unzip it to `C:\Program Files`.
+2. Find the path of the `bin` folder in your Z3 installation path. For me, it is `C:\Program Files\z3-4.8.10-x64-win\bin`.
+3. Open Explorer, right-click on `This PC` and select `Properties` and find the `Advanced system settings` link, which will bring up a `System Properties` dialog.
+4. Click the `Environment Variables` button, select `Path` in the `User variables` pane, and click `Edit...`.
+5. Click the `New` button and then paste your `bin` path into the text box.
+6. Click `OK` to exit the edit window.
+7. Click `OK` to exit the rest of the windows.
+
+#### Mac OS
+
+Z3 is available via [Homebrew](https://brew.sh/). If you have Homebrew installed, just run:
+
+```
+$ brew install z3
+```
+
+#### Linux
+
+On Debian, Z3 is available via `apt`. Run:
+
+```
+$ sudo apt install z3
+```
 
 ## Running
 
