@@ -17,3 +17,17 @@ describe("IsSatisfiable", () => {
     }
   });
 });
+
+describe("Grammar", () => {
+  it("should parse 'sat'", () => {
+    const output = SMT.parse("sat");
+    const expected = [new SMT.IsSatisfiable(true)];
+    expect(output).to.eql(expected);
+  });
+
+  it("should parse 'unsat'", () => {
+    const output = SMT.parse("unsat");
+    const expected = [new SMT.IsSatisfiable(false)];
+    expect(output).to.eql(expected);
+  });
+});

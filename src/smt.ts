@@ -556,14 +556,39 @@ export module SMT {
     }
   }
 
-  const grammar = IsSatisfiable.parser;
+  /**
+   * Represents an expression.
+   */
+  const expr = IsSatisfiable.parser;
+
+  /**
+   * Represents a collection of expressions.
+   */
+  const exprs = P.pipe2<Expr, Expr[], Expr[]>(
+    // there should be at least one expression
+    expr
+  )(
+    // followed optionally by some whitespace and another expression, repeated indefinitely
+    P.many<Expr>(P.right<CU.CharStream, Expr>(P.ws1)(expr))
+  )((e, es) => [e].concat(es));
+
+  /**
+   * Represents the top-level grammar non-terminal.
+   */
+  const grammar: P.IParser<Expr[]> = P.left(
+    // a bunch of expressions
+    exprs
+  )(
+    // followed by an EOF
+    P.eof
+  );
 
   /**
    * Parses an input string into an SMTLIB AST. Throws
    * an exception if parsing fails.
    * @param s A string.
    */
-  export function parse(s: string): Expr {
+  export function parse(s: string): Expr[] {
     const input = new CU.CharStream(s);
     const outcome = grammar(input);
     switch (outcome.tag) {
