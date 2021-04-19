@@ -25,6 +25,20 @@ export interface Sort {
  * Some SMT helpers.
  */
 export module SMT {
+  /**
+   * Parses a valid identifier.
+   */
+  export const identifier = P.pipe2<
+    CU.CharStream,
+    CU.CharStream[],
+    CU.CharStream
+  >(P.choices(P.upper, P.lower))(
+    P.many(P.choices(P.upper, P.lower, P.digit, P.char("-")))
+  )((c, cs) => {
+    const cs2 = [c].concat(cs);
+    return cs2.reduce((acc, cur) => acc.concat(cur));
+  });
+
   export class And implements Expr {
     public readonly clauses: Expr[];
 
@@ -354,6 +368,16 @@ export module SMT {
         " " +
         this.impl.formula +
         ")"
+      );
+    }
+
+    public static get parser() {
+      return P.seq(
+        // first
+        P.str("(define-fun")
+      )(
+        // then the function name
+        P.between(P.ws1)(P.ws1)(identifier)
       );
     }
   }
