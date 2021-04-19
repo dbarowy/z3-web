@@ -373,12 +373,14 @@ export module SMT {
 
     public static get parser() {
       return P.seq(
-        // first
-        P.str("(define-fun")
-      )(
-        // then the function name
-        P.between(P.ws1)(P.ws1)(identifier)
-      );
+        P.seq(
+          // first
+          P.str("(define-fun")
+        )(
+          // then the function name
+          P.between(P.ws1)(P.ws1)(identifier)
+        )
+      )(arglist);
     }
   }
 
@@ -436,6 +438,36 @@ export module SMT {
 
     public get formula(): string {
       return "(" + this.name + " " + this.sort.name + ")";
+    }
+
+    public static get parser() {
+      const declSingle = P.between(
+        // opening paren
+        P.left(P.char("("))(P.ws)
+      )(
+        // closing paren
+        P.left(P.ws)(P.char(")"))
+      )(
+        // the part we care about
+        P.seq(
+          // arg name
+          identifier
+        )(
+          // sort name
+          identifier
+        )
+      );
+
+      return P.between(
+        // opening paren
+        P.left(P.char("("))(P.ws)
+      )(
+        // closing paren
+        P.left(P.ws)(P.char(")"))
+      )(
+        // the part we care about
+        P.many1(declSingle)
+      );
     }
   }
 
