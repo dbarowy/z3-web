@@ -54,6 +54,47 @@ function padR1<T>(p: P.IParser<T>): P.IParser<T> {
   return P.left<T, CU.CharStream>(p)(P.ws1);
 }
 
+/**
+ * Parses at least one `p`, followed by repeated sequences of `sep` and `p`.
+ * In BNF: `p (sep p)*`.
+ * @param p A parser
+ * @param sep A separator
+ */
+function sepBy1<T>(p: P.IParser<T>) {
+  return (sep: P.IParser<any>) => {
+    return P.pipe2<T, T[], T[]>(
+      // parse the one
+      // P.right<CU.CharStream, T>(PP.Comma)(p)
+      p
+    )(
+      // then the many
+      P.many(P.right<any, T>(sep)(p))
+    )(
+      // then combine them
+      (a, bs) => [a].concat(bs)
+    );
+  };
+}
+
+/**
+ * Parses `p` followed by repeated sequences of `sep` and `p`, zero or
+ * more times.
+ * In BNF: `p (sep p)*`.
+ * @param p A parser
+ * @param sep A separator
+ */
+function sepBy<T>(p: P.IParser<T>) {
+  return (sep: P.IParser<any>) => {
+    return P.choice(
+      // parse as many as possible
+      sepBy1(p)(sep)
+    )(
+      // but none is also OK
+      P.result<T[]>([])
+    );
+  };
+}
+
 export interface Expr {
   /**
    * Emit a formula string for this expression. Generally, this
@@ -551,7 +592,7 @@ export module SMT {
     }
   }
 
-  export class Apply implements Expr {
+  export class FunctionApplication implements Expr {
     public readonly name: string;
     public readonly args: Expr[];
 
@@ -569,6 +610,22 @@ export module SMT {
       return (
         "(" + this.name + " " + this.args.map((a) => a.formula).join(" ") + ")"
       );
+    }
+
+    public static get parser(): P.IParser<FunctionApplication> {
+      return P.pipe<[CU.CharStream, Expr[]], FunctionApplication>(
+        P.between<CU.CharStream, CU.CharStream, [CU.CharStream, Expr[]]>(
+          pad(P.char("("))
+        )(pad(P.char(")")))(
+          P.seq<CU.CharStream, Expr[]>(
+            // first a function name
+            padR1(identifier)
+          )(
+            // then a list of arguments
+            sepBy(expr)(P.ws1)
+          )
+        )
+      )(([name, args]) => new FunctionApplication(name.toString(), args));
     }
   }
 

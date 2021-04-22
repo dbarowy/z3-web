@@ -190,6 +190,24 @@ describe("FunctionDefinition", () => {
   });
 });
 
+describe("FunctionApplication", () => {
+  it("should parse a basic function application", () => {
+    const input = new CU.CharStream("(cell 1 9)");
+    const output = SMT.FunctionApplication.parser(input);
+    const expected = new SMT.FunctionApplication("cell", [
+      new SMT.Int(1),
+      new SMT.Int(9),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("Grammar", () => {
   it("should parse 'sat'", () => {
     const output = SMT.parse("sat");
