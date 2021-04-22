@@ -33,7 +33,7 @@ export module SMT {
     CU.CharStream[],
     CU.CharStream
   >(P.choices(P.upper, P.lower))(
-    P.many(P.choices(P.upper, P.lower, P.digit, P.char("-")))
+    P.many(P.choices(P.upper, P.lower, P.digit, P.char("-"), P.char("!")))
   )((c, cs) => {
     const cs2 = [c].concat(cs);
     return cs2.reduce((acc, cur) => acc.concat(cur));
@@ -371,17 +371,17 @@ export module SMT {
       );
     }
 
-    public static get parser() {
-      return P.seq(
-        P.seq(
-          // first
-          P.str("(define-fun")
-        )(
-          // then the function name
-          P.between(P.ws1)(P.ws1)(identifier)
-        )
-      )(arglist);
-    }
+    // public static get parser() {
+    //   return P.seq(
+    //     P.seq(
+    //       // first
+    //       P.str("(define-fun")
+    //     )(
+    //       // then the function name
+    //       P.between(P.ws1)(P.ws1)(identifier)
+    //     )
+    //   )(arglist);
+    // }
   }
 
   export class DataTypeDeclaration implements Expr {
@@ -440,33 +440,44 @@ export module SMT {
       return "(" + this.name + " " + this.sort.name + ")";
     }
 
-    public static get parser() {
-      const declSingle = P.between(
-        // opening paren
-        P.left(P.char("("))(P.ws)
-      )(
-        // closing paren
-        P.left(P.ws)(P.char(")"))
-      )(
-        // the part we care about
-        P.seq(
-          // arg name
-          identifier
+    public static get parser(): P.IParser<ArgumentDeclaration[]> {
+      const declSingle = P.pipe<
+        [CU.CharStream, CU.CharStream],
+        ArgumentDeclaration
+      >(
+        P.between<CU.CharStream, CU.CharStream, [CU.CharStream, CU.CharStream]>(
+          // opening paren
+          P.left<CU.CharStream, CU.CharStream>(P.char("("))(P.ws)
         )(
-          // sort name
-          identifier
+          // closing paren
+          P.left<CU.CharStream, CU.CharStream>(P.ws)(P.char(")"))
+        )(
+          // the part we care about
+          P.seq<CU.CharStream, CU.CharStream>(
+            // arg name
+            P.left<CU.CharStream, CU.CharStream>(identifier)(P.ws)
+          )(
+            // sort name
+            identifier
+          )
         )
+      )(
+        ([name, sort]) =>
+          new ArgumentDeclaration(name.toString(), {
+            name: sort.toString(),
+            sort: Unknown.sort,
+          })
       );
 
-      return P.between(
+      return P.between<CU.CharStream, CU.CharStream, ArgumentDeclaration[]>(
         // opening paren
-        P.left(P.char("("))(P.ws)
+        P.left<CU.CharStream, CU.CharStream>(P.char("("))(P.ws)
       )(
         // closing paren
-        P.left(P.ws)(P.char(")"))
+        P.left<CU.CharStream, CU.CharStream>(P.ws)(P.char(")"))
       )(
         // the part we care about
-        P.many1(declSingle)
+        P.many1(P.left(declSingle)(P.ws))
       );
     }
   }
@@ -560,7 +571,7 @@ export module SMT {
    * Int sort.
    */
   export class Int implements Sort, Expr {
-    public value: number = 0;
+    public value: number;
     private static sortInstance: Sort = new Int(0);
 
     public get sort(): Sort {
@@ -588,7 +599,7 @@ export module SMT {
    * Bool sort.
    */
   export class Bool implements Expr, Sort {
-    public value: boolean = true;
+    public value: boolean;
     private static sortInstance: Sort = new Bool(true);
 
     public get sort(): Sort {
@@ -610,6 +621,16 @@ export module SMT {
     constructor(b: boolean) {
       this.value = b;
     }
+  }
+
+  /**
+   * Unknown sort
+   */
+  export class Unknown implements Sort {
+    private static sortInstance: Sort = new Unknown();
+    public name = "unknown";
+    public sort = Unknown.sortInstance;
+    public static sort = Unknown.sortInstance;
   }
 
   /**
