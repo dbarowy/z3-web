@@ -104,6 +104,18 @@ describe("ArgumentDeclaration", () => {
         assert.fail();
     }
   });
+
+  it("should handle an empty declaration", () => {
+    const input = new CU.CharStream("()");
+    const output = SMT.ArgumentDeclaration.parser(input);
+    switch (output.tag) {
+      case "success":
+        expect(output.result.length).to.equal(0);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
 });
 
 describe("Grammar", () => {

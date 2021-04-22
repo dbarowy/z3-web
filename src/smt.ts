@@ -477,7 +477,7 @@ export module SMT {
         P.left<CU.CharStream, CU.CharStream>(P.ws)(P.char(")"))
       )(
         // the part we care about
-        P.many1(P.left(declSingle)(P.ws))
+        P.many(P.left(declSingle)(P.ws))
       );
     }
   }
