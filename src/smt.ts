@@ -1,5 +1,59 @@
 import { Primitives as P, CharUtil as CU } from "parsecco";
 
+/**
+ * Parses a T optionally preceded and succeeded by whitespace.
+ * @param p
+ * @returns
+ */
+function pad<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.between<CU.CharStream, CU.CharStream, T>(P.ws)(P.ws)(p);
+}
+
+/**
+ * Parses a T mandatorily preceded and succeeded by whitespace.
+ * @param p
+ * @returns
+ */
+function pad1<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.between<CU.CharStream, CU.CharStream, T>(P.ws1)(P.ws1)(p);
+}
+
+/**
+ * Parses a T optionally preceded by whitespace.
+ * @param p
+ * @returns
+ */
+function padL<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.right<CU.CharStream, T>(P.ws)(p);
+}
+
+/**
+ * Parses a T mandatorily preceded by whitespace.
+ * @param p
+ * @returns
+ */
+function padL1<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.right<CU.CharStream, T>(P.ws1)(p);
+}
+
+/**
+ * Parses a T optionally succeeded by whitespace.
+ * @param p
+ * @returns
+ */
+function padR<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.left<T, CU.CharStream>(p)(P.ws);
+}
+
+/**
+ * Parses a T mandatorily succeeded by whitespace.
+ * @param p
+ * @returns
+ */
+function padR1<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.left<T, CU.CharStream>(p)(P.ws1);
+}
+
 export interface Expr {
   /**
    * Emit a formula string for this expression. Generally, this
@@ -372,7 +426,7 @@ export module SMT {
     }
 
     public static get parser() {
-      return P.between(P.char("("))(P.char(")"))(
+      return P.between(pad(P.char("(")))(pad(P.char(")")))(
         P.pipe(
           // start: (((("define-fun",<name>), <args>),<sort>),<expr>)
           P.seq<[[CU.CharStream, ArgumentDeclaration[]], Sort], Expr>(
@@ -386,21 +440,19 @@ export module SMT {
                   P.str("define-fun")
                 )(
                   // then the function name
-                  P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.ws1)(
-                    P.ws1
-                  )(identifier)
+                  padL1(identifier)
                 ) // end: ("define-fun",<name>)
               )(
                 // arguments
-                ArgumentDeclaration.parser
+                padL1(ArgumentDeclaration.parser)
               ) // end: (("define-fun",<name>), <args>)
             )(
               // return sort
-              sort
+              padL1(sort)
             ) // end: ((("define-fun",<name>), <args>),<sort>)
           )(
             // function body
-            expr
+            padL1(expr)
           ) // end: (((("define-fun",<name>), <args>),<sort>),<expr>)
         )(
           ([[[name, args], sort], body]) =>

@@ -148,13 +148,37 @@ describe("ArgumentDeclaration", () => {
 
 describe("FunctionDefinition", () => {
   it("should parse a basic function definition", () => {
-    const input = new CU.CharStream("(define-fun foo () Bool true");
+    const input = new CU.CharStream("(define-fun foo () Bool true)");
     const output = SMT.FunctionDefinition.parser(input);
     const expected = new SMT.FunctionDefinition(
       "foo",
       [],
       SMT.Bool.sort,
       new SMT.Bool(true)
+    );
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+
+  it("should parse a basic function definition with args", () => {
+    const input = new CU.CharStream(
+      "(define-fun SomeComplicatedFunction ((x!0 Column) (x!1 Column)) Column 456)"
+    );
+    const output = SMT.FunctionDefinition.parser(input);
+    const colSort = new SMT.PlaceholderSort("Column");
+    const expected = new SMT.FunctionDefinition(
+      "SomeComplicatedFunction",
+      [
+        new SMT.ArgumentDeclaration("x!0", colSort),
+        new SMT.ArgumentDeclaration("x!1", colSort),
+      ],
+      colSort,
+      new SMT.Int(456)
     );
     switch (output.tag) {
       case "success":
