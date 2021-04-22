@@ -622,7 +622,7 @@ export module SMT {
             padR1(identifier)
           )(
             // then a list of arguments
-            sepBy(expr)(P.ws1)
+            sepBy1(expr)(P.ws1)
           )
         )
       )(([name, args]) => new FunctionApplication(name.toString(), args));
