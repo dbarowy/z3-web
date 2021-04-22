@@ -57,6 +57,34 @@ describe("IsSatisfiable", () => {
   });
 });
 
+describe("Bool", () => {
+  it("should parse 'true'", () => {
+    const input = new CU.CharStream("true");
+    const output = SMT.Bool.valueParser(input);
+    const expected = new SMT.Bool(true);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+
+  it("should parse 'false'", () => {
+    const input = new CU.CharStream("false");
+    const output = SMT.Bool.valueParser(input);
+    const expected = new SMT.Bool(false);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("ArgumentDeclaration", () => {
   it("should handle a basic argument declaration", () => {
     const input = new CU.CharStream("((x Bool))");
@@ -111,6 +139,26 @@ describe("ArgumentDeclaration", () => {
     switch (output.tag) {
       case "success":
         expect(output.result.length).to.equal(0);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("FunctionDefinition", () => {
+  it("should parse a basic function definition", () => {
+    const input = new CU.CharStream("(define-fun foo () Bool true");
+    const output = SMT.FunctionDefinition.parser(input);
+    const expected = new SMT.FunctionDefinition(
+      "foo",
+      [],
+      SMT.Bool.sort,
+      new SMT.Bool(true)
+    );
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
         break;
       case "failure":
         assert.fail();

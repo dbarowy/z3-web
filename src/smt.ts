@@ -371,17 +371,43 @@ export module SMT {
       );
     }
 
-    // public static get parser() {
-    //   return P.seq(
-    //     P.seq(
-    //       // first
-    //       P.str("(define-fun")
-    //     )(
-    //       // then the function name
-    //       P.between(P.ws1)(P.ws1)(identifier)
-    //     )
-    //   )(arglist);
-    // }
+    public static get parser() {
+      return P.between(P.char("("))(P.char(")"))(
+        P.pipe(
+          // start: (((("define-fun",<name>), <args>),<sort>),<expr>)
+          P.seq<[[CU.CharStream, ArgumentDeclaration[]], Sort], Expr>(
+            // start: ((("define-fun",<name>), <args>),<sort>)
+            P.seq<[CU.CharStream, ArgumentDeclaration[]], Sort>(
+              // start: (("define-fun",<name>), <args>)
+              P.seq<CU.CharStream, ArgumentDeclaration[]>(
+                // start: ("define-fun",<name>)
+                P.right<CU.CharStream, CU.CharStream>(
+                  // first
+                  P.str("define-fun")
+                )(
+                  // then the function name
+                  P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.ws1)(
+                    P.ws1
+                  )(identifier)
+                ) // end: ("define-fun",<name>)
+              )(
+                // arguments
+                ArgumentDeclaration.parser
+              ) // end: (("define-fun",<name>), <args>)
+            )(
+              // return sort
+              sort
+            ) // end: ((("define-fun",<name>), <args>),<sort>)
+          )(
+            // function body
+            expr
+          ) // end: (((("define-fun",<name>), <args>),<sort>),<expr>)
+        )(
+          ([[[name, args], sort], body]) =>
+            new FunctionDefinition(name.toString(), args, sort, body)
+        )
+      );
+    }
   }
 
   export class DataTypeDeclaration implements Expr {
@@ -441,11 +467,8 @@ export module SMT {
     }
 
     public static get parser(): P.IParser<ArgumentDeclaration[]> {
-      const declSingle = P.pipe<
-        [CU.CharStream, CU.CharStream],
-        ArgumentDeclaration
-      >(
-        P.between<CU.CharStream, CU.CharStream, [CU.CharStream, CU.CharStream]>(
+      const declSingle = P.pipe<[CU.CharStream, Sort], ArgumentDeclaration>(
+        P.between<CU.CharStream, CU.CharStream, [CU.CharStream, Sort]>(
           // opening paren
           P.left<CU.CharStream, CU.CharStream>(P.char("("))(P.ws)
         )(
@@ -453,21 +476,15 @@ export module SMT {
           P.left<CU.CharStream, CU.CharStream>(P.ws)(P.char(")"))
         )(
           // the part we care about
-          P.seq<CU.CharStream, CU.CharStream>(
+          P.seq<CU.CharStream, Sort>(
             // arg name
             P.left<CU.CharStream, CU.CharStream>(identifier)(P.ws)
           )(
             // sort name
-            identifier
+            sort
           )
         )
-      )(
-        ([name, sort]) =>
-          new ArgumentDeclaration(name.toString(), {
-            name: sort.toString(),
-            sort: Unknown.sort,
-          })
-      );
+      )(([name, sort]) => new ArgumentDeclaration(name.toString(), sort));
 
       return P.between<CU.CharStream, CU.CharStream, ArgumentDeclaration[]>(
         // opening paren
@@ -593,6 +610,14 @@ export module SMT {
     constructor(n: number) {
       this.value = n;
     }
+
+    public static get valueParser(): P.IParser<Int> {
+      return P.pipe<number, Int>(P.integer)((n) => new Int(n));
+    }
+
+    public static get sortParser(): P.IParser<Sort> {
+      return P.pipe<CU.CharStream, Sort>(P.str("Int"))((b) => Int.sort);
+    }
   }
 
   /**
@@ -621,22 +646,57 @@ export module SMT {
     constructor(b: boolean) {
       this.value = b;
     }
+
+    public static get valueParser(): P.IParser<Bool> {
+      return P.pipe<CU.CharStream, Bool>(
+        P.choice(P.str("true"))(P.str("false"))
+      )((tf) => {
+        switch (tf.toString()) {
+          case "true":
+            return new Bool(true);
+          default:
+            return new Bool(false);
+        }
+      });
+    }
+
+    public static get sortParser(): P.IParser<Sort> {
+      return P.pipe<CU.CharStream, Sort>(P.str("Bool"))((b) => Bool.sort);
+    }
   }
 
   /**
    * Unknown sort
    */
-  export class Unknown implements Sort {
-    private static sortInstance: Sort = new Unknown();
-    public name = "unknown";
-    public sort = Unknown.sortInstance;
-    public static sort = Unknown.sortInstance;
+  export class PlaceholderSort implements Sort {
+    private static sortInstance: Sort = new PlaceholderSort("unknown");
+    public name: string;
+    public sort = PlaceholderSort.sortInstance;
+    public static sort = PlaceholderSort.sortInstance;
+    constructor(name: string) {
+      this.name = name;
+    }
+    public static get sortParser(): P.IParser<Sort> {
+      return P.pipe<CU.CharStream, Sort>(identifier)(
+        (name) => new PlaceholderSort(name.toString())
+      );
+    }
   }
+
+  const sort = P.choices(
+    Int.sortParser,
+    Bool.sortParser,
+    PlaceholderSort.sortParser
+  );
 
   /**
    * Represents an expression.
    */
-  const expr = IsSatisfiable.parser;
+  const expr = P.choices<Expr>(
+    IsSatisfiable.parser,
+    Bool.valueParser,
+    Int.valueParser
+  );
 
   /**
    * Represents a collection of expressions.
