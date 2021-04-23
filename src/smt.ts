@@ -120,19 +120,39 @@ export interface Sort {
  * Some SMT helpers.
  */
 export module SMT {
-  /**
-   * Parses a valid identifier.
-   */
-  export const identifier = P.pipe2<
-    CU.CharStream,
-    CU.CharStream[],
-    CU.CharStream
-  >(P.choices(P.upper, P.lower))(
-    P.many(P.choices(P.upper, P.lower, P.digit, P.char("-"), P.char("!")))
+  // splitting this into two pieces for readability
+  const __identifier = P.pipe2<CU.CharStream, CU.CharStream[], CU.CharStream>(
+    // prefix
+    P.choices(P.upper, P.lower)
+  )(
+    // suffix
+    P.many(
+      P.choices(
+        P.upper,
+        P.lower,
+        P.digit,
+        P.char("-"),
+        P.char("_"),
+        P.char("!")
+      )
+    )
   )((c, cs) => {
     const cs2 = [c].concat(cs);
     return cs2.reduce((acc, cur) => acc.concat(cur));
   });
+
+  /**
+   * Parses a valid identifier.
+   */
+  export const identifier = P.bind<CU.CharStream, CU.CharStream>(
+    __identifier
+  )((id) =>
+    reservedWords.has(id.toString())
+      ? P.zero<CU.CharStream>("Invalid use of reserved word.")
+      : P.result(id)
+  );
+
+  const reservedWords = new Set(["true", "false", "sat", "unsat"]);
 
   export class And implements Expr {
     public readonly clauses: Expr[];
@@ -643,6 +663,12 @@ export module SMT {
     public get formula(): string {
       return this.name;
     }
+
+    public static get parser(): P.IParser<Var> {
+      return P.pipe<CU.CharStream, Var>(identifier)(
+        (v) => new Var(v.toString())
+      );
+    }
   }
 
   export class IsSatisfiable implements Expr {
@@ -802,6 +828,7 @@ export module SMT {
    * Represents an expression.
    */
   const expr = P.choices<Expr>(
+    Var.parser,
     IsSatisfiable.parser,
     Bool.valueParser,
     Int.valueParser
@@ -841,7 +868,7 @@ export module SMT {
       case "success":
         return outcome.result;
       case "failure":
-        throw new Error(outcome.error_msg);
+        throw new Error("Not a valid SMTLIB program.");
     }
   }
 }

@@ -85,6 +85,21 @@ describe("Bool", () => {
   });
 });
 
+describe("Var", () => {
+  it("should parse 'x'", () => {
+    const input = new CU.CharStream("x");
+    const output = SMT.Var.parser(input);
+    const expected = new SMT.Var("x");
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("ArgumentDeclaration", () => {
   it("should handle a basic argument declaration", () => {
     const input = new CU.CharStream("((x Bool))");
@@ -210,14 +225,42 @@ describe("FunctionApplication", () => {
 
 describe("Grammar", () => {
   it("should parse 'sat'", () => {
-    const output = SMT.parse("sat");
-    const expected = [new SMT.IsSatisfiable(true)];
-    expect(output).to.eql(expected);
+    try {
+      const output = SMT.parse("sat");
+      const expected = [new SMT.IsSatisfiable(true)];
+      expect(output).to.eql(expected);
+    } catch (e) {
+      assert.fail();
+    }
   });
 
   it("should parse 'unsat'", () => {
-    const output = SMT.parse("unsat");
-    const expected = [new SMT.IsSatisfiable(false)];
-    expect(output).to.eql(expected);
+    try {
+      const output = SMT.parse("unsat");
+      const expected = [new SMT.IsSatisfiable(false)];
+      expect(output).to.eql(expected);
+    } catch (e) {
+      assert.fail();
+    }
+  });
+
+  it("should parse 'true' as a Bool", () => {
+    try {
+      const output = SMT.parse("true");
+      const expected = [new SMT.Bool(true)];
+      expect(output).to.eql(expected);
+    } catch (e) {
+      assert.fail();
+    }
+  });
+
+  it("should parse 'truez' as a Var", () => {
+    try {
+      const output = SMT.parse("truez");
+      const expected = [new SMT.Var("truez")];
+      expect(output).to.eql(expected);
+    } catch (e) {
+      assert.fail();
+    }
   });
 });
