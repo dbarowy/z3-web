@@ -100,6 +100,24 @@ describe("Var", () => {
   });
 });
 
+describe("Let", () => {
+  it("should parse a basic let expression", () => {
+    const input = new CU.CharStream("(let ((x 2)) 1)");
+    const output = SMT.Let.parser(input);
+    const expected = new SMT.Let(
+      [[new SMT.Var("x"), new SMT.Int(2)]],
+      new SMT.Int(1)
+    );
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("ArgumentDeclaration", () => {
   it("should handle a basic argument declaration", () => {
     const input = new CU.CharStream("((x Bool))");

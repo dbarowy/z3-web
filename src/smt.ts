@@ -1,4 +1,5 @@
 import { Primitives as P, CharUtil as CU } from "parsecco";
+import { ExpressionWithTypeArguments } from "typescript";
 
 /**
  * Parses a T optionally preceded and succeeded by whitespace.
@@ -360,6 +361,75 @@ export module SMT {
 
     public get formula(): string {
       return "(>= " + this.term1.formula + " " + this.term2.formula + ")";
+    }
+  }
+
+  export class Let implements Expr {
+    public readonly bindings: [Var, Expr][];
+    public readonly body: Expr;
+
+    /**
+     * Represents a let expression.
+     * @param bindings A set of variable-expression bindings.
+     * @param body The expression in which the set of bindings is valid.
+     */
+    constructor(bindings: [Var, Expr][], body: Expr) {
+      this.bindings = bindings;
+      this.body = body;
+    }
+
+    public get formula(): string {
+      return (
+        "(let (" +
+        this.bindings.map(
+          ([v, expr]) => "(" + v.formula + " " + expr.formula + ")"
+        ) +
+        ") " +
+        this.body.formula +
+        ")"
+      );
+    }
+
+    public static get parser(): P.IParser<Let> {
+      return P.pipe<[[Var, Expr][], Expr], Let>(
+        P.between<CU.CharStream, CU.CharStream, [[Var, Expr][], Expr]>(
+          pad(P.char("("))
+        )(pad(P.char(")")))(
+          P.right<CU.CharStream, [[Var, Expr][], Expr]>(
+            // first a function name
+            padR1(P.str("let"))
+          )(
+            P.seq<[Var, Expr][], Expr>(
+              // then parens
+              P.between<CU.CharStream, CU.CharStream, [Var, Expr][]>(
+                pad(P.char("("))
+              )(pad(P.char(")")))(
+                // then pairs of bindings
+                sepBy1<[Var, Expr]>(
+                  // inside even more parens
+                  P.between<CU.CharStream, CU.CharStream, [Var, Expr]>(
+                    pad(P.char("("))
+                  )(pad(P.char(")")))(
+                    P.seq<Var, Expr>(
+                      // a variable name
+                      Var.parser
+                    )(
+                      // an arbitrary expression
+                      expr
+                    )
+                  )
+                )(
+                  // binding pair separator
+                  P.ws1
+                )
+              )
+            )(
+              // and finally, the body
+              expr
+            )
+          )
+        )
+      )(([bindings, body]) => new Let(bindings, body));
     }
   }
 
