@@ -966,7 +966,12 @@ export module SMT {
     And.parser,
     Or.parser,
     Equals.parser,
-    Plus.parser
+    LessThan.parser,
+    LessThanOrEqual.parser,
+    GreaterThan.parser,
+    GreaterThanOrEqual.parser,
+    Plus.parser,
+    Minus.parser
   );
 
   /**
