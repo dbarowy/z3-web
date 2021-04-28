@@ -118,6 +118,39 @@ describe("Let", () => {
   });
 });
 
+describe("Equals", () => {
+  it("should parse an = expression", () => {
+    const input = new CU.CharStream("(= 1 2)");
+    const output = SMT.Equals.parser(input);
+    const expected = new SMT.Equals([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("And", () => {
+  it("should parse a basic and expression", () => {
+    const input = new CU.CharStream("(and (= 1 2) (= 2 1))");
+    const output = SMT.And.parser(input);
+    const expected = new SMT.And([
+      new SMT.Equals([new SMT.Int(1), new SMT.Int(2)]),
+      new SMT.Equals([new SMT.Int(2), new SMT.Int(1)]),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("ArgumentDeclaration", () => {
   it("should handle a basic argument declaration", () => {
     const input = new CU.CharStream("((x Bool))");

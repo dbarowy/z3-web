@@ -1,5 +1,9 @@
 import { Primitives as P, CharUtil as CU } from "parsecco";
-import { ExpressionWithTypeArguments } from "typescript";
+
+/**
+ * expr is the top-level parser in the grammar.
+ */
+export let [expr, exprImpl] = P.recParser<Expr>();
 
 /**
  * Parses a T optionally preceded and succeeded by whitespace.
@@ -61,8 +65,8 @@ function padR1<T>(p: P.IParser<T>): P.IParser<T> {
  * @returns
  */
 function par<T>(p: P.IParser<T>): P.IParser<T> {
-  return P.between<CU.CharStream, CU.CharStream, T>(pad(P.char("(")))(
-    pad(P.char(")"))
+  return P.between<CU.CharStream, CU.CharStream, T>(padR(P.char("(")))(
+    padL(P.char(")"))
   )(p);
 }
 
@@ -196,6 +200,18 @@ export module SMT {
     public get formula(): string {
       return SMT.And.andH(this.clauses);
     }
+
+    public static get parser(): P.IParser<And> {
+      return par(
+        P.right<CU.CharStream, And>(
+          // the and
+          padR(P.str("and"))
+        )(
+          // the expression list
+          P.pipe<Expr[], And>(sepBy1(expr)(P.ws1))((es) => new And(es))
+        )
+      );
+    }
   }
 
   export class Or implements Expr {
@@ -243,21 +259,47 @@ export module SMT {
   }
 
   export class Equals implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents an equality constraint in SMTLIB.
      * @param term1 An SMTLIB clause.
      * @param term2 An SMTLIB clause.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
+    }
+
+    private static eqH(clauses: Expr[]): string {
+      if (clauses.length === 0) {
+        return "";
+      } else if (clauses.length === 1) {
+        return clauses[0].formula;
+      } else {
+        return (
+          "(= " +
+          clauses[0].formula +
+          " " +
+          SMT.Equals.eqH(clauses.slice(1)) +
+          ")"
+        );
+      }
     }
 
     public get formula(): string {
-      return "(= " + this.term1.formula + " " + this.term2.formula + ")";
+      return SMT.Equals.eqH(this.terms);
+    }
+
+    public static get parser(): P.IParser<Equals> {
+      return par(
+        P.right<CU.CharStream, Equals>(
+          // the =
+          padR(P.str("="))
+        )(
+          // the expression list
+          P.pipe<Expr[], Equals>(sepBy1(expr)(P.ws1))((es) => new Equals(es))
+        )
+      );
     }
   }
 
@@ -430,7 +472,7 @@ export module SMT {
               )
             )(
               // and finally, the body
-              expr
+              padL(expr)
             )
           )
         )
@@ -900,14 +942,9 @@ export module SMT {
   );
 
   /**
-   * Represents an expression.
+   * Core operations.
    */
-  const expr = P.choices<Expr>(
-    Var.parser,
-    IsSatisfiable.parser,
-    Bool.valueParser,
-    Int.valueParser
-  );
+  const ops = P.choices<Expr>(And.parser, Equals.parser);
 
   /**
    * Represents a collection of expressions.
@@ -929,6 +966,17 @@ export module SMT {
   )(
     // followed by an EOF
     P.eof
+  );
+
+  /**
+   * Parses an arbitrarily complex expression.
+   */
+  exprImpl.contents = P.choices<Expr>(
+    ops,
+    Var.parser,
+    IsSatisfiable.parser,
+    Bool.valueParser,
+    Int.valueParser
   );
 
   /**
