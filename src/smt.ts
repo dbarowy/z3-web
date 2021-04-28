@@ -332,78 +332,82 @@ export module SMT {
   }
 
   export class LessThan implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents a less-than constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(< " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty("<", this.terms);
+    }
+
+    public static get parser(): P.IParser<Minus> {
+      return opParser("<", (es) => new Minus(es));
     }
   }
 
   export class LessThanOrEqual implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
-     * Represents a less-than-or-equal-to constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * Represents a less-than-or-equal constraint in SMTLIB.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(<= " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty("<=", this.terms);
+    }
+
+    public static get parser(): P.IParser<Minus> {
+      return opParser("<=", (es) => new Minus(es));
     }
   }
 
   export class GreaterThan implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents a greater-than constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(> " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty(">", this.terms);
+    }
+
+    public static get parser(): P.IParser<Minus> {
+      return opParser(">", (es) => new Minus(es));
     }
   }
 
   export class GreaterThanOrEqual implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents a greater-than-or-equal constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(>= " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty(">=", this.terms);
+    }
+
+    public static get parser(): P.IParser<Minus> {
+      return opParser(">=", (es) => new Minus(es));
     }
   }
 

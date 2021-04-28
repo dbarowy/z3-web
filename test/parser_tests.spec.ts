@@ -199,6 +199,69 @@ describe("Minus", () => {
   });
 });
 
+describe("LessThan", () => {
+  it("should parse a basic < expression", () => {
+    const input = new CU.CharStream("(< 1 2)");
+    const output = SMT.LessThan.parser(input);
+    const expected = new SMT.LessThan([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("LessThanOrEqual", () => {
+  it("should parse a basic <= expression", () => {
+    const input = new CU.CharStream("(<= 1 2)");
+    const output = SMT.LessThanOrEqual.parser(input);
+    const expected = new SMT.LessThanOrEqual([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("GreaterThan", () => {
+  it("should parse a basic > expression", () => {
+    const input = new CU.CharStream("(> 1 2)");
+    const output = SMT.GreaterThan.parser(input);
+    const expected = new SMT.GreaterThan([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("GreaterThanOrEqual", () => {
+  it("should parse a basic >= expression", () => {
+    const input = new CU.CharStream("(>= 1 2)");
+    const output = SMT.GreaterThanOrEqual.parser(input);
+    const expected = new SMT.GreaterThanOrEqual([
+      new SMT.Int(1),
+      new SMT.Int(2),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("IfThenElse", () => {
   it("should parse an ite expression", () => {
     const input = new CU.CharStream("(ite (= 1 2) false true)");
