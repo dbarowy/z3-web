@@ -56,6 +56,17 @@ function padR1<T>(p: P.IParser<T>): P.IParser<T> {
 }
 
 /**
+ * Parses anything surrounded by parens, with optional whitespace padding.
+ * @param p
+ * @returns
+ */
+function par<T>(p: P.IParser<T>): P.IParser<T> {
+  return P.between<CU.CharStream, CU.CharStream, T>(pad(P.char("(")))(
+    pad(P.char(")"))
+  )(p);
+}
+
+/**
  * Parses at least one `p`, followed by repeated sequences of `sep` and `p`.
  * In BNF: `p (sep p)*`.
  * @param p A parser
@@ -392,27 +403,21 @@ export module SMT {
 
     public static get parser(): P.IParser<Let> {
       return P.pipe<[[Var, Expr][], Expr], Let>(
-        P.between<CU.CharStream, CU.CharStream, [[Var, Expr][], Expr]>(
-          pad(P.char("("))
-        )(pad(P.char(")")))(
+        par(
           P.right<CU.CharStream, [[Var, Expr][], Expr]>(
             // first a function name
             padR1(P.str("let"))
           )(
             P.seq<[Var, Expr][], Expr>(
               // then parens
-              P.between<CU.CharStream, CU.CharStream, [Var, Expr][]>(
-                pad(P.char("("))
-              )(pad(P.char(")")))(
+              par(
                 // then pairs of bindings
                 sepBy1<[Var, Expr]>(
                   // inside even more parens
-                  P.between<CU.CharStream, CU.CharStream, [Var, Expr]>(
-                    pad(P.char("("))
-                  )(pad(P.char(")")))(
+                  par(
                     P.seq<Var, Expr>(
                       // a variable name
-                      Var.parser
+                      padR1(Var.parser)
                     )(
                       // an arbitrary expression
                       expr
