@@ -111,6 +111,50 @@ function sepBy<T>(p: P.IParser<T>) {
   };
 }
 
+/**
+ * A parser that constructs an arbitrary AST node from an op
+ * string and a sequence of expressions.  E.g., `(or expr1 ... exprn)`.
+ * @param op The operation string.
+ * @param ctor A constructor lambda.
+ * @returns
+ */
+function opParser<T>(op: string, ctor: (es: Expr[]) => T): P.IParser<T> {
+  return par(
+    P.right<CU.CharStream, T>(
+      // the op
+      padR(P.str(op))
+    )(
+      // the expression list
+      P.pipe<Expr[], T>(sepBy1(expr)(P.ws1))((es) => ctor(es))
+    )
+  );
+}
+
+/**
+ * Pretty-printer helper.  Takes an op and an array
+ * of clauses and produces a string like `(op <expr1> ... <exprn>)`
+ * @param op The operation
+ * @param clauses Expression array
+ * @returns
+ */
+function opPretty(op: string, clauses: Expr[]): string {
+  if (clauses.length === 0) {
+    return "";
+  } else if (clauses.length === 1) {
+    return clauses[0].formula;
+  } else {
+    return (
+      "(" +
+      op +
+      " " +
+      clauses[0].formula +
+      " " +
+      opPretty(op, clauses.slice(1)) +
+      ")"
+    );
+  }
+}
+
 export interface Expr {
   /**
    * Emit a formula string for this expression. Generally, this
@@ -181,36 +225,12 @@ export module SMT {
       this.clauses = clauses;
     }
 
-    private static andH(clauses: Expr[]): string {
-      if (clauses.length === 0) {
-        return "";
-      } else if (clauses.length === 1) {
-        return clauses[0].formula;
-      } else {
-        return (
-          "(and " +
-          clauses[0].formula +
-          " " +
-          SMT.And.andH(clauses.slice(1)) +
-          ")"
-        );
-      }
-    }
-
     public get formula(): string {
-      return SMT.And.andH(this.clauses);
+      return opPretty("and", this.clauses);
     }
 
     public static get parser(): P.IParser<And> {
-      return par(
-        P.right<CU.CharStream, And>(
-          // the and
-          padR(P.str("and"))
-        )(
-          // the expression list
-          P.pipe<Expr[], And>(sepBy1(expr)(P.ws1))((es) => new And(es))
-        )
-      );
+      return opParser("and", (es) => new And(es));
     }
   }
 
@@ -225,32 +245,12 @@ export module SMT {
       this.clauses = clauses;
     }
 
-    private static orH(clauses: Expr[]): string {
-      if (clauses.length === 0) {
-        return "";
-      } else if (clauses.length === 1) {
-        return clauses[0].formula;
-      } else {
-        return (
-          "(or " + clauses[0].formula + " " + SMT.Or.orH(clauses.slice(1)) + ")"
-        );
-      }
-    }
-
     public get formula(): string {
-      return SMT.Or.orH(this.clauses);
+      return opPretty("or", this.clauses);
     }
 
     public static get parser(): P.IParser<Or> {
-      return par(
-        P.right<CU.CharStream, Or>(
-          // the and
-          padR(P.str("or"))
-        )(
-          // the expression list
-          P.pipe<Expr[], Or>(sepBy1(expr)(P.ws1))((es) => new Or(es))
-        )
-      );
+      return opParser("or", (es) => new Or(es));
     }
   }
 
@@ -282,74 +282,52 @@ export module SMT {
       this.terms = terms;
     }
 
-    private static eqH(clauses: Expr[]): string {
-      if (clauses.length === 0) {
-        return "";
-      } else if (clauses.length === 1) {
-        return clauses[0].formula;
-      } else {
-        return (
-          "(= " +
-          clauses[0].formula +
-          " " +
-          SMT.Equals.eqH(clauses.slice(1)) +
-          ")"
-        );
-      }
-    }
-
     public get formula(): string {
-      return SMT.Equals.eqH(this.terms);
+      return opPretty("=", this.terms);
     }
 
     public static get parser(): P.IParser<Equals> {
-      return par(
-        P.right<CU.CharStream, Equals>(
-          // the =
-          padR(P.str("="))
-        )(
-          // the expression list
-          P.pipe<Expr[], Equals>(sepBy1(expr)(P.ws1))((es) => new Equals(es))
-        )
-      );
+      return opParser("=", (es) => new Equals(es));
     }
   }
 
   export class Plus implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents an addition constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(+ " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty("+", this.terms);
+    }
+
+    public static get parser(): P.IParser<Plus> {
+      return opParser("+", (es) => new Plus(es));
     }
   }
 
   export class Minus implements Expr {
-    public readonly term1: Expr;
-    public readonly term2: Expr;
+    public readonly terms: Expr[];
 
     /**
      * Represents a subtraction constraint in SMTLIB.
-     * @param term1 An SMTLIB clause.
-     * @param term2 An SMTLIB clause.
+     * @param terms An array of SMTLIB clauses.
      */
-    constructor(term1: Expr, term2: Expr) {
-      this.term1 = term1;
-      this.term2 = term2;
+    constructor(terms: Expr[]) {
+      this.terms = terms;
     }
 
     public get formula(): string {
-      return "(- " + this.term1.formula + " " + this.term2.formula + ")";
+      return opPretty("-", this.terms);
+    }
+
+    public static get parser(): P.IParser<Minus> {
+      return opParser("-", (es) => new Minus(es));
     }
   }
 
@@ -980,7 +958,12 @@ export module SMT {
   /**
    * Core operations.
    */
-  const ops = P.choices<Expr>(And.parser, Or.parser, Equals.parser);
+  const ops = P.choices<Expr>(
+    And.parser,
+    Or.parser,
+    Equals.parser,
+    Plus.parser
+  );
 
   /**
    * Represents a collection of expressions.

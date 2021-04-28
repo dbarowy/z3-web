@@ -169,6 +169,36 @@ describe("Or", () => {
   });
 });
 
+describe("Plus", () => {
+  it("should parse a basic + expression", () => {
+    const input = new CU.CharStream("(+ 1 2)");
+    const output = SMT.Plus.parser(input);
+    const expected = new SMT.Plus([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("Minus", () => {
+  it("should parse a basic - expression", () => {
+    const input = new CU.CharStream("(- 1 2)");
+    const output = SMT.Minus.parser(input);
+    const expected = new SMT.Minus([new SMT.Int(1), new SMT.Int(2)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("IfThenElse", () => {
   it("should parse an ite expression", () => {
     const input = new CU.CharStream("(ite (= 1 2) false true)");
