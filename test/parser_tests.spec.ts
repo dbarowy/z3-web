@@ -151,6 +151,43 @@ describe("And", () => {
   });
 });
 
+describe("Or", () => {
+  it("should parse a basic or expression", () => {
+    const input = new CU.CharStream("(or (= 1 2) (= 2 1))");
+    const output = SMT.Or.parser(input);
+    const expected = new SMT.Or([
+      new SMT.Equals([new SMT.Int(1), new SMT.Int(2)]),
+      new SMT.Equals([new SMT.Int(2), new SMT.Int(1)]),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
+describe("IfThenElse", () => {
+  it("should parse an ite expression", () => {
+    const input = new CU.CharStream("(ite (= 1 2) false true)");
+    const output = SMT.IfThenElse.parser(input);
+    const expected = new SMT.IfThenElse(
+      new SMT.Equals([new SMT.Int(1), new SMT.Int(2)]),
+      new SMT.Bool(false),
+      new SMT.Bool(true)
+    );
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+});
+
 describe("ArgumentDeclaration", () => {
   it("should handle a basic argument declaration", () => {
     const input = new CU.CharStream("((x Bool))");

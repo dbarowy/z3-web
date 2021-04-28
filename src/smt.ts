@@ -240,6 +240,18 @@ export module SMT {
     public get formula(): string {
       return SMT.Or.orH(this.clauses);
     }
+
+    public static get parser(): P.IParser<Or> {
+      return par(
+        P.right<CU.CharStream, Or>(
+          // the and
+          padR(P.str("or"))
+        )(
+          // the expression list
+          P.pipe<Expr[], Or>(sepBy1(expr)(P.ws1))((es) => new Or(es))
+        )
+      );
+    }
   }
 
   export class Not implements Expr {
@@ -506,6 +518,30 @@ export module SMT {
         " " +
         this.whenFalse.formula +
         ")"
+      );
+    }
+
+    public static get parser(): P.IParser<IfThenElse> {
+      return par(
+        P.right<CU.CharStream, IfThenElse>(
+          // the ite
+          padR1(P.str("ite"))
+        )(
+          P.pipe<[Expr, [Expr, Expr]], IfThenElse>(
+            P.seq<Expr, [Expr, Expr]>(
+              // the condition
+              padR1(expr)
+            )(
+              P.seq<Expr, Expr>(
+                // true clause
+                padR1(expr)
+              )(
+                // false clause
+                expr
+              )
+            )
+          )(([cond, [etrue, efalse]]) => new IfThenElse(cond, etrue, efalse))
+        )
       );
     }
   }
@@ -944,7 +980,7 @@ export module SMT {
   /**
    * Core operations.
    */
-  const ops = P.choices<Expr>(And.parser, Equals.parser);
+  const ops = P.choices<Expr>(And.parser, Or.parser, Equals.parser);
 
   /**
    * Represents a collection of expressions.
