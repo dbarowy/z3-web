@@ -1,7 +1,7 @@
 {
   "name": "z3-web",
   "version": "1.0.0",
-  "description": "A simple web service for the Z3 theorem prover.",
+  "description": "A web service and SMTLIB parser for the Z3 theorem prover.",
   "main": "dist/index.js",
   "scripts": {
     "prebuild": "npx tslint -c tslint.json -p tsconfig.json --fix",
