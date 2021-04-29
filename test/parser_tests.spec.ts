@@ -228,6 +228,31 @@ describe("LessThanOrEqual", () => {
         assert.fail();
     }
   });
+
+  it("should parse something a little more complex", () => {
+    // const input = new CU.CharStream(
+    //   "(<= (x (upperleft x!0)) (x (bottomright x!1)))"
+    // );
+    const input = new CU.CharStream(
+      "(<= (x (upperleft x!0)) (x (bottomright x!1)) ))"
+    );
+    const output = SMT.LessThanOrEqual.parser(input);
+    const expected = new SMT.LessThanOrEqual([
+      new SMT.FunctionApplication("x", [
+        new SMT.FunctionApplication("upperleft", [new SMT.Var("x!0")]),
+      ]),
+      new SMT.FunctionApplication("x", [
+        new SMT.FunctionApplication("bottomright", [new SMT.Var("x!1")]),
+      ]),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
 });
 
 describe("GreaterThan", () => {
@@ -389,11 +414,54 @@ describe("FunctionDefinition", () => {
 
 describe("FunctionApplication", () => {
   it("should parse a basic function application", () => {
+    const input = new CU.CharStream("(x 1)");
+    const output = SMT.FunctionApplication.parser(input);
+    const expected = new SMT.FunctionApplication("x", [new SMT.Int(1)]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+
+  it("should parse a basic function application with a weird variable", () => {
+    const input = new CU.CharStream("(upperleft x!0)");
+    const output = SMT.FunctionApplication.parser(input);
+    const expected = new SMT.FunctionApplication("upperleft", [
+      new SMT.Var("x!0"),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+
+  it("should parse a slightly less basic function application", () => {
     const input = new CU.CharStream("(cell 1 9)");
     const output = SMT.FunctionApplication.parser(input);
     const expected = new SMT.FunctionApplication("cell", [
       new SMT.Int(1),
       new SMT.Int(9),
+    ]);
+    switch (output.tag) {
+      case "success":
+        expect(output.result).to.eql(expected);
+        break;
+      case "failure":
+        assert.fail();
+    }
+  });
+
+  it("should parse a nested function application", () => {
+    const input = new CU.CharStream("(x (upperleft x!0))");
+    const output = SMT.FunctionApplication.parser(input);
+    const expected = new SMT.FunctionApplication("x", [
+      new SMT.FunctionApplication("upperleft", [new SMT.Var("x!0")]),
     ]);
     switch (output.tag) {
       case "success":
@@ -534,18 +602,14 @@ sat
 
   it("should parse a valid multi-line program (fragment 3)", () => {
     var input = `
-  sat
-  (
-    (define-fun c2 () Cell
-      (cell 1 10))
-    (define-fun c1 () Cell
-      (cell 1 9))
-    (define-fun ccolleft ((x!0 Column) (x!1 Column)) Bool
-      (let ((a!1 (not (<= (x (upperleft x!0)) (x (bottomright x!1))))))
-        (and (= (y (upperleft x!1)) (y (upperleft x!0)))
-             (= (y (bottomright x!1)) (y (bottomright x!0)))
-             a!1)))
-  )`.trim();
+sat
+(
+  (define-fun c2 () Cell
+  (cell 1 10))
+  (define-fun c1 () Cell
+  (cell 1 9))
+  (define-fun ccolleft ((x!0 Column) (x!1 Column)) Bool (let ((a!1 (not (<= (x (upperleft x!0)) (x (bottomright x!1)))))) (and (= (y (upperleft x!1)) (y (upperleft x!0))) (= (y (bottomright x!1)) (y (bottomright x!0))) a!1)))
+)`.trim();
     try {
       const output = SMT.parse(input);
       const expected = [
@@ -590,12 +654,12 @@ sat
                     new SMT.LessThanOrEqual([
                       new SMT.FunctionApplication("x", [
                         new SMT.FunctionApplication("upperleft", [
-                          new SMT.Var("x!1"),
+                          new SMT.Var("x!0"),
                         ]),
                       ]),
-                      new SMT.FunctionApplication("y", [
+                      new SMT.FunctionApplication("x", [
                         new SMT.FunctionApplication("bottomright", [
-                          new SMT.Var("x!0"),
+                          new SMT.Var("x!1"),
                         ]),
                       ]),
                     ])
@@ -635,7 +699,7 @@ sat
       ];
       expect(output).to.eql(expected);
     } catch (e) {
-      assert.fail();
+      assert.fail(e);
     }
   });
 

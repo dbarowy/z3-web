@@ -130,7 +130,7 @@ function opParser<T>(op: string, ctor: (es: Expr[]) => T): P.IParser<T> {
       padR(P.str(op))
     )(
       // the expression list
-      P.pipe<Expr[], T>(sepBy1(expr)(P.ws1))((es) => ctor(es))
+      P.pipe<Expr[], T>(sepBy(expr)(P.ws))((es) => ctor(es))
     )
   );
 }
@@ -359,8 +359,8 @@ export module SMT {
       return opPretty("<", this.terms);
     }
 
-    public static get parser(): P.IParser<Minus> {
-      return opParser("<", (es) => new Minus(es));
+    public static get parser(): P.IParser<LessThan> {
+      return opParser("<", (es) => new LessThan(es));
     }
   }
 
@@ -379,8 +379,8 @@ export module SMT {
       return opPretty("<=", this.terms);
     }
 
-    public static get parser(): P.IParser<Minus> {
-      return opParser("<=", (es) => new Minus(es));
+    public static get parser(): P.IParser<LessThanOrEqual> {
+      return opParser("<=", (es) => new LessThanOrEqual(es));
     }
   }
 
@@ -399,8 +399,8 @@ export module SMT {
       return opPretty(">", this.terms);
     }
 
-    public static get parser(): P.IParser<Minus> {
-      return opParser(">", (es) => new Minus(es));
+    public static get parser(): P.IParser<GreaterThan> {
+      return opParser(">", (es) => new GreaterThan(es));
     }
   }
 
@@ -419,8 +419,8 @@ export module SMT {
       return opPretty(">=", this.terms);
     }
 
-    public static get parser(): P.IParser<Minus> {
-      return opParser(">=", (es) => new Minus(es));
+    public static get parser(): P.IParser<GreaterThanOrEqual> {
+      return opParser(">=", (es) => new GreaterThanOrEqual(es));
     }
   }
 
@@ -790,10 +790,10 @@ export module SMT {
         )(pad(P.char(")")))(
           P.seq<CU.CharStream, Expr[]>(
             // first a function name
-            padR1(identifier)
+            padR(identifier)
           )(
             // then a list of arguments
-            sepBy1(expr)(P.ws1)
+            sepBy1(expr)(P.ws)
           )
         )
       )(([name, args]) => new FunctionApplication(name.toString(), args));
@@ -1003,12 +1003,12 @@ export module SMT {
    * Core operations.
    */
   const ops = P.choices<Expr>(
-    P.debug(Not.parser)("not"),
+    Not.parser,
     And.parser,
     Or.parser,
     Equals.parser,
     LessThan.parser,
-    P.debug(LessThanOrEqual.parser)("<= parser"),
+    LessThanOrEqual.parser,
     GreaterThan.parser,
     GreaterThanOrEqual.parser,
     Plus.parser,
@@ -1036,7 +1036,8 @@ export module SMT {
    */
   exprImpl.contents = P.choices<Expr>(
     ops,
-    P.debug(FunctionApplication.parser)("funapp"),
+    Let.parser,
+    FunctionApplication.parser,
     FunctionDefinition.parser,
     Var.parser,
     IsSatisfiable.parser,
