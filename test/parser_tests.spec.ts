@@ -486,6 +486,7 @@ sat
           ),
         ]),
       ];
+      expect(output).to.eql(expected);
     } catch (e) {
       assert.fail();
     }
@@ -525,6 +526,114 @@ sat
           ),
         ]),
       ];
+      expect(output).to.eql(expected);
+    } catch (e) {
+      assert.fail();
+    }
+  });
+
+  it("should parse a valid multi-line program (fragment 3)", () => {
+    var input = `
+  sat
+  (
+    (define-fun c2 () Cell
+      (cell 1 10))
+    (define-fun c1 () Cell
+      (cell 1 9))
+    (define-fun ccolleft ((x!0 Column) (x!1 Column)) Bool
+      (let ((a!1 (not (<= (x (upperleft x!0)) (x (bottomright x!1))))))
+        (and (= (y (upperleft x!1)) (y (upperleft x!0)))
+             (= (y (bottomright x!1)) (y (bottomright x!0)))
+             a!1)))
+  )`.trim();
+    try {
+      const output = SMT.parse(input);
+      const expected = [
+        new SMT.IsSatisfiable(true),
+        new SMT.Model([
+          new SMT.FunctionDefinition(
+            "c2",
+            [],
+            new SMT.PlaceholderSort("Cell"),
+            new SMT.FunctionApplication("cell", [
+              new SMT.Int(1),
+              new SMT.Int(10),
+            ])
+          ),
+          new SMT.FunctionDefinition(
+            "c1",
+            [],
+            new SMT.PlaceholderSort("Cell"),
+            new SMT.FunctionApplication("cell", [
+              new SMT.Int(1),
+              new SMT.Int(9),
+            ])
+          ),
+          new SMT.FunctionDefinition(
+            "ccolleft",
+            [
+              new SMT.ArgumentDeclaration(
+                "x!0",
+                new SMT.PlaceholderSort("Column")
+              ),
+              new SMT.ArgumentDeclaration(
+                "x!1",
+                new SMT.PlaceholderSort("Column")
+              ),
+            ],
+            SMT.Bool.sort,
+            new SMT.Let(
+              [
+                [
+                  new SMT.Var("a!1"),
+                  new SMT.Not(
+                    new SMT.LessThanOrEqual([
+                      new SMT.FunctionApplication("x", [
+                        new SMT.FunctionApplication("upperleft", [
+                          new SMT.Var("x!1"),
+                        ]),
+                      ]),
+                      new SMT.FunctionApplication("y", [
+                        new SMT.FunctionApplication("bottomright", [
+                          new SMT.Var("x!0"),
+                        ]),
+                      ]),
+                    ])
+                  ),
+                ],
+              ],
+              new SMT.And([
+                new SMT.Equals([
+                  new SMT.FunctionApplication("y", [
+                    new SMT.FunctionApplication("upperleft", [
+                      new SMT.Var("x!1"),
+                    ]),
+                  ]),
+                  new SMT.FunctionApplication("y", [
+                    new SMT.FunctionApplication("upperleft", [
+                      new SMT.Var("x!0"),
+                    ]),
+                  ]),
+                ]),
+                new SMT.Equals([
+                  new SMT.FunctionApplication("y", [
+                    new SMT.FunctionApplication("bottomright", [
+                      new SMT.Var("x!1"),
+                    ]),
+                  ]),
+                  new SMT.FunctionApplication("y", [
+                    new SMT.FunctionApplication("bottomright", [
+                      new SMT.Var("x!0"),
+                    ]),
+                  ]),
+                ]),
+                new SMT.Var("a!1"),
+              ])
+            )
+          ),
+        ]),
+      ];
+      expect(output).to.eql(expected);
     } catch (e) {
       assert.fail();
     }

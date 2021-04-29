@@ -273,6 +273,14 @@ export module SMT {
     public get formula(): string {
       return "(not " + this.clause.formula + ")";
     }
+
+    public static get parser(): P.IParser<Not> {
+      return par(
+        P.right<CU.CharStream, Not>(padR(P.str("not")))(
+          P.pipe<Expr, Not>(expr)((e) => new Not(e))
+        )
+      );
+    }
   }
 
   export class Equals implements Expr {
@@ -995,11 +1003,12 @@ export module SMT {
    * Core operations.
    */
   const ops = P.choices<Expr>(
+    P.debug(Not.parser)("not"),
     And.parser,
     Or.parser,
     Equals.parser,
     LessThan.parser,
-    LessThanOrEqual.parser,
+    P.debug(LessThanOrEqual.parser)("<= parser"),
     GreaterThan.parser,
     GreaterThanOrEqual.parser,
     Plus.parser,
@@ -1027,7 +1036,7 @@ export module SMT {
    */
   exprImpl.contents = P.choices<Expr>(
     ops,
-    FunctionApplication.parser,
+    P.debug(FunctionApplication.parser)("funapp"),
     FunctionDefinition.parser,
     Var.parser,
     IsSatisfiable.parser,
