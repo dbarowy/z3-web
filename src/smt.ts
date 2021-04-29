@@ -806,6 +806,26 @@ export module SMT {
     }
   }
 
+  export class Parens implements Expr {
+    public readonly expr: Expr;
+
+    /**
+     * Represents a pair of parentheses containing an expression in SMTLIB.
+     * @param expr The expression.
+     */
+    constructor(expr: Expr) {
+      this.expr = expr;
+    }
+
+    public get formula(): string {
+      return "(" + this.expr.formula + ")";
+    }
+
+    public static get parser(): P.IParser<Parens> {
+      return P.pipe<Expr, Parens>(par(expr))((e) => new Parens(e));
+    }
+  }
+
   export class IsSatisfiable implements Expr {
     public value: boolean;
 
@@ -1001,10 +1021,12 @@ export module SMT {
    */
   exprImpl.contents = P.choices<Expr>(
     ops,
+    FunctionApplication.parser,
     Var.parser,
     IsSatisfiable.parser,
     Bool.valueParser,
-    Int.valueParser
+    Int.valueParser,
+    Parens.parser
   );
 
   /**
