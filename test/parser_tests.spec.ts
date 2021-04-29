@@ -532,11 +532,11 @@ describe("Grammar", () => {
   });
 
   it("should parse a valid multi-line program (fragment 1)", () => {
-    var input = `
+    let input = `
 sat
 (
   (define-fun c2 () Cell
-    (cell 1 10))        
+    (cell 1 10))
 )`.trim();
     try {
       const output = SMT.parse(input);
@@ -561,7 +561,7 @@ sat
   });
 
   it("should parse a valid multi-line program (fragment 2)", () => {
-    var input = `
+    let input = `
   sat
   (
     (define-fun c2 () Cell
@@ -601,7 +601,7 @@ sat
   });
 
   it("should parse a valid multi-line program (fragment 3)", () => {
-    var input = `
+    let input = `
 sat
 (
   (define-fun c2 () Cell

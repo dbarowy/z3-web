@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { spawnSync } from "child_process";
+import { SMT } from "./smt";
 
 /**
  * This function
@@ -25,8 +26,15 @@ function main() {
     if (!req.query.program) {
       console.log("Invalid program.");
     }
+    // call Z3 with user input
     const program = req.query.program as string;
-    res.send(callZ3(program));
+    const output = callZ3(program);
+
+    // parse it
+    const ast = SMT.parse(output);
+
+    // send it back to the user
+    res.send(JSON.stringify(ast));
   });
 
   app.listen(port, () => {

@@ -184,7 +184,7 @@ export interface Sort {
 /**
  * Some SMT helpers.
  */
-export module SMT {
+export namespace SMT {
   // splitting this into two pieces for readability
   const __identifier = P.pipe2<CU.CharStream, CU.CharStream[], CU.CharStream>(
     // prefix
