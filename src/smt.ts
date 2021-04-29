@@ -622,8 +622,11 @@ export module SMT {
     }
 
     public static get parser() {
-      return P.between(pad(P.char("(")))(pad(P.char(")")))(
-        P.pipe(
+      return par(
+        P.pipe<
+          [[[CU.CharStream, ArgumentDeclaration[]], Sort], Expr],
+          FunctionDefinition
+        >(
           // start: (((("define-fun",<name>), <args>),<sort>),<expr>)
           P.seq<[[CU.CharStream, ArgumentDeclaration[]], Sort], Expr>(
             // start: ((("define-fun",<name>), <args>),<sort>)
@@ -1022,6 +1025,7 @@ export module SMT {
   exprImpl.contents = P.choices<Expr>(
     ops,
     FunctionApplication.parser,
+    FunctionDefinition.parser,
     Var.parser,
     IsSatisfiable.parser,
     Bool.valueParser,
