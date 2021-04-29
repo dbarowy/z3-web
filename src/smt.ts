@@ -1,7 +1,12 @@
 import { Primitives as P, CharUtil as CU } from "parsecco";
 
 /**
- * expr is the top-level parser in the grammar.
+ * exprs is the top-level parser in the grammar.
+ */
+export let [exprs, exprsImpl] = P.recParser<Expr[]>();
+
+/**
+ * expr is a basic expression.
  */
 export let [expr, exprImpl] = P.recParser<Expr>();
 
@@ -809,23 +814,27 @@ export module SMT {
     }
   }
 
-  export class Parens implements Expr {
-    public readonly expr: Expr;
+  export class Model implements Expr {
+    public readonly exprs: Expr[];
 
     /**
-     * Represents a pair of parentheses containing an expression in SMTLIB.
-     * @param expr The expression.
+     * Represents a model definition in SMTLIB.
+     * It just looks like a pair of parens, and can only
+     * occur at the top level.
+     * @param exprs A sequence of expressions.
      */
-    constructor(expr: Expr) {
-      this.expr = expr;
+    constructor(exprs: Expr[]) {
+      this.exprs = exprs;
     }
 
     public get formula(): string {
-      return "(" + this.expr.formula + ")";
+      return "(" + this.exprs.map((e) => e.formula).join("\n") + "\n)";
     }
 
-    public static get parser(): P.IParser<Parens> {
-      return P.pipe<Expr, Parens>(par(expr))((e) => new Parens(e));
+    public static get parser(): P.IParser<Model> {
+      return par(
+        P.pipe<Expr[], Model>(sepBy1(expr)(P.ws))((es) => new Model(es))
+      );
     }
   }
 
@@ -1000,13 +1009,7 @@ export module SMT {
   /**
    * Represents a collection of expressions.
    */
-  const exprs = P.pipe2<Expr, Expr[], Expr[]>(
-    // there should be at least one expression
-    expr
-  )(
-    // followed optionally by some whitespace and another expression, repeated indefinitely
-    P.many<Expr>(P.right<CU.CharStream, Expr>(P.ws1)(expr))
-  )((e, es) => [e].concat(es));
+  exprsImpl.contents = sepBy1(P.choice<Expr>(expr)(Model.parser))(P.ws);
 
   /**
    * Represents the top-level grammar non-terminal.
@@ -1029,8 +1032,7 @@ export module SMT {
     Var.parser,
     IsSatisfiable.parser,
     Bool.valueParser,
-    Int.valueParser,
-    Parens.parser
+    Int.valueParser
   );
 
   /**

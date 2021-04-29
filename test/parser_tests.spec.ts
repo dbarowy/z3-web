@@ -2,6 +2,7 @@ import { SMT } from "../src/smt";
 import { CharUtil as CU } from "parsecco";
 import { assert, expect } from "chai";
 import "mocha";
+import * as fs from "fs";
 
 describe("Identifier", () => {
   it('should parse "foo"', () => {
@@ -404,13 +405,13 @@ describe("FunctionApplication", () => {
   });
 });
 
-describe("Parens", () => {
-  it("should parse parens containing some expression", () => {
+describe("Model", () => {
+  it("should parse a model definition containing some expression", () => {
     const input = new CU.CharStream("((cell 1 9))");
-    const output = SMT.Parens.parser(input);
-    const expected = new SMT.Parens(
-      new SMT.FunctionApplication("cell", [new SMT.Int(1), new SMT.Int(9)])
-    );
+    const output = SMT.Model.parser(input);
+    const expected = new SMT.Model([
+      new SMT.FunctionApplication("cell", [new SMT.Int(1), new SMT.Int(9)]),
+    ]);
     switch (output.tag) {
       case "success":
         expect(output.result).to.eql(expected);
@@ -461,4 +462,83 @@ describe("Grammar", () => {
       assert.fail();
     }
   });
+
+  it("should parse a valid multi-line program (fragment 1)", () => {
+    var input = `
+sat
+(
+  (define-fun c2 () Cell
+    (cell 1 10))        
+)`.trim();
+    try {
+      const output = SMT.parse(input);
+      const expected = [
+        new SMT.IsSatisfiable(true),
+        new SMT.Model([
+          new SMT.FunctionDefinition(
+            "c2",
+            [],
+            new SMT.PlaceholderSort("Cell"),
+            new SMT.FunctionApplication("cell", [
+              new SMT.Int(1),
+              new SMT.Int(10),
+            ])
+          ),
+        ]),
+      ];
+    } catch (e) {
+      assert.fail();
+    }
+  });
+
+  it("should parse a valid multi-line program (fragment 2)", () => {
+    var input = `
+  sat
+  (
+    (define-fun c2 () Cell
+      (cell 1 10))
+    (define-fun c1 () Cell
+      (cell 1 9))
+  )`.trim();
+    try {
+      const output = SMT.parse(input);
+      const expected = [
+        new SMT.IsSatisfiable(true),
+        new SMT.Model([
+          new SMT.FunctionDefinition(
+            "c2",
+            [],
+            new SMT.PlaceholderSort("Cell"),
+            new SMT.FunctionApplication("cell", [
+              new SMT.Int(1),
+              new SMT.Int(10),
+            ])
+          ),
+          new SMT.FunctionDefinition(
+            "c1",
+            [],
+            new SMT.PlaceholderSort("Cell"),
+            new SMT.FunctionApplication("cell", [
+              new SMT.Int(1),
+              new SMT.Int(9),
+            ])
+          ),
+        ]),
+      ];
+    } catch (e) {
+      assert.fail();
+    }
+  });
+
+  // it("should parse a real model output", () => {
+  //   try {
+  //     console.log("CURRENT WORKING DIR: " + process.cwd());
+  //     const input = fs.readFileSync("test/z3-model-output-test.smt", "utf8");
+  //     const output = SMT.parse(input);
+  //     console.log(output);
+  //   } catch (e) {
+  //     console.log(e);
+  //     assert.fail(e);
+  //   }
+  // });
 });
