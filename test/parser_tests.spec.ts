@@ -532,7 +532,7 @@ describe("Grammar", () => {
   });
 
   it("should parse a valid multi-line program (fragment 1)", () => {
-    let input = `
+    const input = `
 sat
 (
   (define-fun c2 () Cell
@@ -561,7 +561,7 @@ sat
   });
 
   it("should parse a valid multi-line program (fragment 2)", () => {
-    let input = `
+    const input = `
   sat
   (
     (define-fun c2 () Cell
@@ -601,7 +601,7 @@ sat
   });
 
   it("should parse a valid multi-line program (fragment 3)", () => {
-    let input = `
+    const input = `
 sat
 (
   (define-fun c2 () Cell
