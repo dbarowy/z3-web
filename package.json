@@ -4,7 +4,6 @@
   "description": "A web service and SMTLIB parser for the Z3 theorem prover.",
   "main": "dist/index.js",
   "scripts": {
-    "prebuild": "npx tslint -c tslint.json -p tsconfig.json --fix",
     "build": "tsc",
     "prestart": "npm run build",
     "start": "node .",
