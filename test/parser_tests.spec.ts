@@ -703,9 +703,31 @@ sat
     }
   });
 
-  it("should parse all of the output from a real Z3 run", () => {
+  it("should parse all of the output from a real Z3 run (case 1)", () => {
     try {
       const input = fs.readFileSync("test/z3-model-output-test.smt", "utf8");
+      const output = SMT.parse(input);
+      assert(true);
+    } catch (e) {
+      console.log(e);
+      assert.fail(e);
+    }
+  });
+
+  it("should parse all of the output from a real Z3 run (case 2)", () => {
+    try {
+      const input = fs.readFileSync("test/z3-model-output-test-2.smt", "utf8");
+      const output = SMT.parse(input);
+      assert(true);
+    } catch (e) {
+      console.log(e);
+      assert.fail(e);
+    }
+  });
+
+  it("should parse all of the output from a real Z3 run (case 3)", () => {
+    try {
+      const input = fs.readFileSync("test/z3-model-output-test-3.smt", "utf8");
       const output = SMT.parse(input);
       assert(true);
     } catch (e) {

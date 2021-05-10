@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { spawnSync } from "child_process";
 import { SMT } from "./smt";
+import * as fs from "fs";
 
 /**
  * This function
@@ -26,15 +27,37 @@ function main() {
     if (!req.query.program) {
       console.log("Invalid program.");
     }
-    // call Z3 with user input
+
+    // get user input
     const program = req.query.program as string;
+
+    // for debugging
+    console.log(program);
+
+    // call Z3 with user input
     const output = callZ3(program);
 
-    // parse it
-    const ast = SMT.parse(output);
+    // for debugging
+    console.log(output);
 
-    // send it back to the user
-    res.send(JSON.stringify(ast));
+    // debug: save the string to a file
+    fs.writeFileSync("z3Model.smt", output);
+
+    // parse it
+    try {
+      const ast = SMT.parse(output);
+
+      // make it JSON
+      const json_ast = JSON.stringify(ast);
+
+      // for debugging
+      console.log(json_ast);
+
+      // send it back to the user
+      res.send(json_ast);
+    } catch (e) {
+      console.log(e);
+    }
   });
 
   app.listen(port, () => {

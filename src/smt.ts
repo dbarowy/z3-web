@@ -1027,8 +1027,8 @@ export namespace SMT {
     // a bunch of expressions
     exprs
   )(
-    // followed by an EOF
-    P.eof
+    // followed by some optional whitespace and then EOF
+    padL(P.eof)
   );
 
   /**
