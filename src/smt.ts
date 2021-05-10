@@ -1,3 +1,16 @@
+/**
+ * ©2021 Daniel W. Barowy (Williams College/Microsoft Research)
+ * The SMT module defines a collection of SMTLIB AST node
+ * constructors as well as parsing functions for those
+ * nodes.  Parser users should call the user-friendly top-level
+ * `SMT.parse` function, or if interfacing directly with
+ * combinators is desired, the top-level `grammar` function.
+ * All SMTLIB objects can be rendered into SMTLIB strings
+ * using the `formula` property/method.
+ * This library provides core SMTLIB functionality, but
+ * it is currently not complete.  Patches welcome.
+ */
+
 import { Primitives as P, CharUtil as CU } from "parsecco";
 
 /**
