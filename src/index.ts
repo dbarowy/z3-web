@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { spawnSync } from "child_process";
-import { SMT } from "./smt";
+import { SMT } from "smtliblib";
 import * as fs from "fs";
 
 /**
@@ -40,15 +40,14 @@ function main() {
     // for debugging
     console.log(output);
 
-    // debug: save the string to a file
-    fs.writeFileSync("z3Model.smt", output);
+    // send it back to the user
 
     // parse it
     try {
       const ast = SMT.parse(output);
 
-      // make it JSON
-      const json_ast = JSON.stringify(ast);
+      // make it a JSON
+      const json_ast = SMT.serialize(ast);
 
       // for debugging
       console.log(json_ast);
