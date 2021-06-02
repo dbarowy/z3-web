@@ -3,6 +3,12 @@ import cors from "cors";
 import { spawnSync } from "child_process";
 import { SMT, Expr } from "smtliblib";
 import { Dictionary } from "./dict";
+import * as fs from "fs";
+import https from "https";
+
+const CERT_PRV = "certs/z3web.key";
+const CERT_PUB = "certs/z3web.cert";
+const PORT = 3456;
 
 /**
  * This function
@@ -15,14 +21,47 @@ function callZ3(program: string): string {
 }
 
 /**
+ * Are the TLS certificates available? Prints a diagnostic
+ * message if certs are missing.
+ * @returns true iff both certificates are availabl
+ */
+function checkCertsAvailable() {
+  // are the certs installed?
+  console.log(process.cwd());
+  if (!fs.existsSync(CERT_PRV)) {
+    console.error(CERT_PRV + " is missing");
+  }
+  if (!fs.existsSync(CERT_PUB)) {
+    console.error(CERT_PUB + " is missing");
+  }
+  if (!fs.existsSync(CERT_PRV) || !fs.existsSync(CERT_PUB)) {
+    console.error("Cannot start Z3 webservice.");
+    console.error(
+      "Please ensure that the following TLS certificates are available:"
+    );
+    console.error("Private key: " + CERT_PRV);
+    console.error("Public key: " + CERT_PUB);
+    console.error(
+      "The /scripts/certgen.sh will generate and install these scripts for you."
+    );
+
+    return false;
+  }
+  return true;
+}
+
+/**
  * Start up Z3 and handle requests to and from the web using Express.
  */
 function main() {
   const app = express();
-  const port = 3456;
   const z3stacks = new Dictionary<string[]>();
   let stacknum = 0;
   const MAX_STACKS = 10;
+
+  if (!checkCertsAvailable()) {
+    return;
+  }
 
   app.use(cors()); // Allow CORS requests
 
@@ -128,9 +167,17 @@ function main() {
     res.send("user " + req.params.id);
   });
 
-  app.listen(port, () => {
-    console.log(`Example application listening at http://localhost:${port}`);
-  });
+  https
+    .createServer(
+      {
+        key: fs.readFileSync(CERT_PRV),
+        cert: fs.readFileSync(CERT_PUB),
+      },
+      app
+    )
+    .listen(PORT, function () {
+      console.log(`Z3 web service listening on https://localhost:${PORT}`);
+    });
 }
 
 main();
