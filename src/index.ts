@@ -8,6 +8,7 @@ import https from "https";
 
 const CERT_PRV = "certs/z3web.key";
 const CERT_PUB = "certs/z3web.cert";
+const HOST = "localhost";
 const PORT = 3456;
 
 /**
@@ -176,7 +177,7 @@ function main() {
       app
     )
     .listen(PORT, function () {
-      console.log(`Z3 web service listening on https://localhost:${PORT}`);
+      console.log(`Z3 web service listening on https://${HOST}:${PORT}`);
     });
 }
 
