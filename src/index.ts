@@ -85,7 +85,7 @@ function main() {
       const output = callZ3(program);
 
       // parse it
-      const ast = SMT.parse(output);
+      const ast = SMT.parse(output, false);
 
       // make it JSON
       const json_ast = SMT.serialize(ast);
@@ -146,7 +146,7 @@ function main() {
       const output = callZ3(program);
 
       // parse it
-      const ast = SMT.parse(output);
+      const ast = SMT.parse(output, false);
 
       // make it JSON
       const json_ast = SMT.serialize(ast);
