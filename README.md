@@ -10,7 +10,20 @@ Run:
 $ npm install
 ```
 
-You will also need to ensure that [Z3 is installed locally](https://github.com/Z3Prover/z3/releases).
+You will also need to ensure that [Z3 is installed locally](https://github.com/Z3Prover/z3/releases), and you also need a local copy of OpenSSL. Windows users can get OpenSSL by installing the [Git for Windows](https://git-scm.com/download/win) package, which includes an `openssl.exe` binary. Both `z3` and `openssl` need to be in the user's path.
+
+### Generating SSL certificates
+
+`z3-web` uses SSL by default, so in order to run it, you will need SSL certificates. It looks in the `certs` directory of the repository for two files, a private key called `certs/z3web.key` and a public key called `certs/z3web.cert`. You may generate these yourself, but for development purposes, a self-signed certificate suffices.
+
+#### Windows 10
+
+#### Mac OS
+
+1. In the repository root, run `scripts/certgen.sh`.
+2. Double-click the `certs/z3web.cert` file to open the Keychain Access program. You will be prompted to enter your password.
+3. Double-click on the certificate just added. It will have a randomly-generated name like `3cb69473-50de-4bac-a7a9-3e0c272131b4`. If you're having trouble finding it, look for a certificate with an expiration date roughly one month from now.
+4. Expand the `Trust` item and select `Always Trust` from the `When using this certificate` dropdown.
 
 ### Installing Z3
 
