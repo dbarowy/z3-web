@@ -18,6 +18,8 @@ You will also need to ensure that [Z3 is installed locally](https://github.com/Z
 
 #### Windows 10
 
+You need to add this via `mmc`. TODO.
+
 #### Mac OS
 
 1. In the repository root, run `scripts/certgen.sh`.
