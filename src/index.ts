@@ -168,17 +168,21 @@ function main() {
     res.send("user " + req.params.id);
   });
 
-  https
-    .createServer(
-      {
-        key: fs.readFileSync(CERT_PRV),
-        cert: fs.readFileSync(CERT_PUB),
-      },
-      app
-    )
-    .listen(PORT, function () {
-      console.log(`Z3 web service listening on https://${HOST}:${PORT}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`Z3 web service listening on http://${HOST}:${PORT}`);
+  });
+
+  // https
+  //   .createServer(
+  //     {
+  //       key: fs.readFileSync(CERT_PRV),
+  //       cert: fs.readFileSync(CERT_PUB),
+  //     },
+  //     app
+  //   )
+  //   .listen(PORT, function () {
+  //     console.log(`Z3 web service listening on https://${HOST}:${PORT}`);
+  //   });
 }
 
 main();
