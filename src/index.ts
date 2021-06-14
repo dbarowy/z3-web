@@ -5,15 +5,23 @@ import { SMT, Expr } from "smtliblib";
 import { Dictionary } from "./dict";
 import * as fs from "fs";
 import https from "https";
+import { exit } from "node:process";
 
-const CERT_PRV = "certs/z3web.key";
-const CERT_PUB = "certs/z3web.cert";
-const HOST = "localhost";
-const PORT = 3456;
+// Set defaults here
+class Opts {
+  constructor(
+    public use_tls: boolean = false,
+    public cert_prv = "certs/z3web.key",
+    public cert_pub = "certs/z3web.cert",
+    public host = "localhost",
+    public port = 3456
+  ) {}
+}
 
 /**
- * This function
- * @param program
+ * This function calls Z3 on the command line and returns
+ * the output as a string.
+ * @param program An SMTLIB query.
  * @returns
  */
 function callZ3(program: string): string {
@@ -26,22 +34,22 @@ function callZ3(program: string): string {
  * message if certs are missing.
  * @returns true iff both certificates are availabl
  */
-function checkCertsAvailable() {
+function checkCertsAvailable(opts: Opts) {
   // are the certs installed?
   console.log(process.cwd());
-  if (!fs.existsSync(CERT_PRV)) {
-    console.error(CERT_PRV + " is missing");
+  if (!fs.existsSync(opts.cert_prv)) {
+    console.error(opts.cert_prv + " is missing");
   }
-  if (!fs.existsSync(CERT_PUB)) {
-    console.error(CERT_PUB + " is missing");
+  if (!fs.existsSync(opts.cert_pub)) {
+    console.error(opts.cert_pub + " is missing");
   }
-  if (!fs.existsSync(CERT_PRV) || !fs.existsSync(CERT_PUB)) {
+  if (!fs.existsSync(opts.cert_prv) || !fs.existsSync(opts.cert_pub)) {
     console.error("Cannot start Z3 webservice.");
     console.error(
       "Please ensure that the following TLS certificates are available:"
     );
-    console.error("Private key: " + CERT_PRV);
-    console.error("Public key: " + CERT_PUB);
+    console.error("Private key: " + opts.cert_prv);
+    console.error("Public key: " + opts.cert_pub);
     console.error(
       "The /scripts/certgen.sh will generate and install these scripts for you."
     );
@@ -49,6 +57,18 @@ function checkCertsAvailable() {
     return false;
   }
   return true;
+}
+
+function argParse(args: string[]): Opts {
+  const opts = new Opts();
+  for (const arg of args) {
+    switch (arg) {
+      case "--tls":
+        opts.use_tls = true;
+        break;
+    }
+  }
+  return opts;
 }
 
 /**
@@ -60,26 +80,32 @@ function main() {
   let stacknum = 0;
   const MAX_STACKS = 10;
 
-  if (!checkCertsAvailable()) {
-    return;
+  const opts = argParse(process.argv);
+
+  if (opts.use_tls && !checkCertsAvailable(opts)) {
+    exit(1);
   }
 
   app.use(cors()); // Allow CORS requests
+  app.use(express.json({ limit: 1073741824 })); // set POST limit to 1GB
 
   /**
    * Find a model for the given constraints.
    */
-  app.get("/", (req, res) => {
-    if (!req.query.program) {
+  app.post("/", (req, res) => {
+    console.log("HERE 1");
+
+    if (!req.body.program) {
       console.log("Invalid program.");
+      exit(1);
     }
 
     try {
       // get user input
-      const program = req.query.program as string;
+      const program = req.body.program as string;
 
       // for debugging
-      console.log(program);
+      console.log("Query: \n" + program);
 
       // call Z3 with user input
       const output = callZ3(program);
@@ -168,21 +194,28 @@ function main() {
     res.send("user " + req.params.id);
   });
 
-  app.listen(PORT, () => {
-    console.log(`Z3 web service listening on http://${HOST}:${PORT}`);
-  });
-
-  // https
-  //   .createServer(
-  //     {
-  //       key: fs.readFileSync(CERT_PRV),
-  //       cert: fs.readFileSync(CERT_PUB),
-  //     },
-  //     app
-  //   )
-  //   .listen(PORT, function () {
-  //     console.log(`Z3 web service listening on https://${HOST}:${PORT}`);
-  //   });
+  // optionally use TLS
+  if (opts.use_tls) {
+    https
+      .createServer(
+        {
+          key: fs.readFileSync(opts.cert_prv),
+          cert: fs.readFileSync(opts.cert_pub),
+        },
+        app
+      )
+      .listen(opts.port, function () {
+        console.log(
+          `Z3 web service listening on https://${opts.host}:${opts.port}`
+        );
+      });
+  } else {
+    app.listen(opts.port, () => {
+      console.log(
+        `Z3 web service listening on http://${opts.host}:${opts.port}`
+      );
+    });
+  }
 }
 
 main();
