@@ -5,7 +5,7 @@ import { SMT, Expr } from "smtliblib";
 import { Dictionary } from "./dict";
 import * as fs from "fs";
 import https from "https";
-import { exit } from "node:process";
+import process = require("process");
 const compression = require("compression");
 const LZUTF8 = require("lzutf8");
 
@@ -85,7 +85,7 @@ function main() {
   const opts = argParse(process.argv);
 
   if (opts.use_tls && !checkCertsAvailable(opts)) {
-    exit(1);
+    process.exit(1);
   }
 
   app.use(cors()); // Allow CORS requests
@@ -98,7 +98,7 @@ function main() {
   app.post("/", (req, res) => {
     if (!req.body.program) {
       console.log("Invalid program.");
-      exit(1);
+      process.exit(1);
     }
 
     try {
