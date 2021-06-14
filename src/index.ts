@@ -6,6 +6,8 @@ import { Dictionary } from "./dict";
 import * as fs from "fs";
 import https from "https";
 import { exit } from "node:process";
+const compression = require("compression");
+const LZUTF8 = require("lzutf8");
 
 // Set defaults here
 class Opts {
@@ -88,21 +90,25 @@ function main() {
 
   app.use(cors()); // Allow CORS requests
   app.use(express.json({ limit: 1073741824 })); // set POST limit to 1GB
+  app.use(compression()); // compress responses
 
   /**
    * Find a model for the given constraints.
    */
   app.post("/", (req, res) => {
-    console.log("HERE 1");
-
     if (!req.body.program) {
       console.log("Invalid program.");
       exit(1);
     }
 
     try {
+      console.log(`DATA: '${req.body.program}'`);
+
       // get user input
-      const program = req.body.program as string;
+      const data = req.body.program as string;
+
+      // decompress
+      const program = LZUTF8.decompress(data, { inputEncoding: "Base64" });
 
       // for debugging
       console.log("Query: \n" + program);
