@@ -103,12 +103,16 @@ function main() {
 
     try {
       console.log(`DATA: '${req.body.program}'`);
+      console.log(`USE CLIENT-SIDE COMPRESSION?: ${req.body.compressed}`);
+      const compressed = req.body.compressed as boolean;
 
       // get user input
       const data = req.body.program as string;
 
-      // decompress
-      const program = LZUTF8.decompress(data, { inputEncoding: "Base64" });
+      // optionally decompress
+      const program = compressed
+        ? LZUTF8.decompress(data, { inputEncoding: "Base64" })
+        : data;
 
       // for debugging
       console.log("Query: \n" + program);
