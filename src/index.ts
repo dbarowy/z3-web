@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { Option, Some, None } from "./option";
 import { spawnSync } from "child_process";
 import { SMT, Expr } from "smtliblib";
 import { Dictionary } from "./dict";
@@ -22,13 +23,33 @@ class Opts {
 
 /**
  * This function calls Z3 on the command line and returns
- * the output as a string.
+ * the output as a string.  The SMTLIB query should not
+ * contain (check-sat) or (get-model) commands, which will
+ * be explicitly executed by this function.
  * @param program An SMTLIB query.
- * @returns
+ * @returns An SMTLIB model iff the query is satisfiable.
  */
-function callZ3(program: string): string {
-  const child = spawnSync("z3", ["-in"], { input: program });
-  return child.stdout.toString();
+function callZ3(program: string): Option<Expr[]> {
+  try {
+    // FIXME: it would be better to use a Z3 stack and
+    //        to check for satisfiability before calling
+    //        (get-model)
+    // FIXME: it would be great if smtliblib could actually
+    //        parse (declare-datatype ...)
+    const program2 = program + "\n(check-sat)\n(get-model)";
+    const child = spawnSync("z3", ["-in"], { input: program2 });
+    const output = child.stdout.toString();
+    // this is admittedly kind of a hack
+    if (output.startsWith("unsat")) {
+      return None;
+    } else {
+      const model_ast = SMT.parse(program, false);
+      return new Some(model_ast);
+    }
+  } catch (err) {
+    console.warn("Invalid SMTLIB program.");
+    return None;
+  }
 }
 
 /**
@@ -120,8 +141,10 @@ function main() {
       // call Z3 with user input
       const output = callZ3(program);
 
-      // parse it
-      const ast = SMT.parse(output, false);
+      // get AST
+      const ast = output.hasValue
+        ? output.value
+        : [new SMT.IsSatisfiable(false)];
 
       // make it JSON
       const json_ast = SMT.serialize(ast);
@@ -181,8 +204,10 @@ function main() {
       // call Z3 with user input
       const output = callZ3(program);
 
-      // parse it
-      const ast = SMT.parse(output, false);
+      // get ast
+      const ast = output.hasValue
+        ? output.value
+        : [new SMT.IsSatisfiable(false)];
 
       // make it JSON
       const json_ast = SMT.serialize(ast);
