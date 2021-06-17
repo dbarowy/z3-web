@@ -43,7 +43,7 @@ function callZ3(program: string): Option<Expr[]> {
     if (output.startsWith("unsat")) {
       return None;
     } else {
-      const model_ast = SMT.parse(output, false);
+      const model_ast = SMT.parse(output);
       return new Some(model_ast);
     }
   } catch (err) {
