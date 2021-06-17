@@ -30,25 +30,27 @@ class Opts {
  * @returns An SMTLIB model iff the query is satisfiable.
  */
 function callZ3(program: string): Option<Expr[]> {
-  try {
-    // FIXME: it would be better to use a Z3 stack and
-    //        to check for satisfiability before calling
-    //        (get-model)
-    // FIXME: it would be great if smtliblib could actually
-    //        parse (declare-datatype ...)
-    const program2 = program + "\n(check-sat)\n(get-model)";
-    const child = spawnSync("z3", ["-in"], { input: program2 });
-    const output = child.stdout.toString();
-    // this is admittedly kind of a hack
-    if (output.startsWith("unsat")) {
-      return None;
-    } else {
+  // FIXME: it would be better to use a Z3 stack and
+  //        to check for satisfiability before calling
+  //        (get-model)
+
+  const program2 = program + "\n(check-sat)\n(get-model)";
+  const child = spawnSync("z3", ["-in"], { input: program2 });
+  const output = child.stdout.toString();
+  // this is admittedly kind of a hack
+  if (output.startsWith("unsat")) {
+    return None;
+  } else {
+    try {
+      // FIXME: it would be great if smtliblib could actually
+      //        parse (declare-datatype ...)
       const model_ast = SMT.parse(output);
       return new Some(model_ast);
+    } catch (err) {
+      console.warn("z3-web does not understand the response from Z3.");
+      console.warn(`Response is:\n${output}`);
+      return None;
     }
-  } catch (err) {
-    console.warn("Invalid SMTLIB program.");
-    return None;
   }
 }
 
