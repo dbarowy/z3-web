@@ -28,7 +28,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "lzutf8": "^0.6.0",
-    "smtliblib": "^1.0.15",
+    "smtliblib": "^1.0.16",
     "typescript": "^4.2.3"
   },
   "devDependencies": {
